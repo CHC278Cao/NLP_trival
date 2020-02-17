@@ -28,9 +28,6 @@ class RNNModel(nn.Module):
         emb = self.embedding(input)
         pad_input = pack_padded_sequence(emb, lengths=seq_len, batch_first=True)
         pad_input = pad_input.to(self.device)
-
-
-        # emb = emb.permute(1, 0, 2)
         out, (hidden, cell) = self.rnn1(pad_input)
         out, _ = pad_packed_sequence(out, batch_first=True)
         out_avg = torch.mean(out, dim = 1)
@@ -67,10 +64,6 @@ def train_epoch(model, dataloader, device, optimizer, criterion):
 
     for batch_idx, (data, target) in enumerate(dataloader):
         # pdb.set_trace()
-        # seq_len = [len(x) for x in data]
-        # data = pad_sequence(data, batch_first=True)
-        # data = pack_padded_sequence(data, lengths=seq_len, batch_first=True)
-        # data = data.to(device)
         target = torch.stack(target).view(-1).to(device)
         optimizer.zero_grad()
         out = model(data)
@@ -91,10 +84,8 @@ def valid_epoch(model, validloader, device, criterion):
     correct = 0
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(validloader):
-            # pdb.set_trace()
-            # data = torch.stack(data).to(device)
-            target = torch.stack(target).view(-1).to(device)
             out = model(data)
+            target = torch.stack(target).view(-1).to(device)
             loss = criterion(out, target)
             pred = torch.argmax(out, dim = 1)
             rect = (torch.eq(pred.detach(), target)).cpu().sum()
