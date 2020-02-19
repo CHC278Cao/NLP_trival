@@ -22,12 +22,9 @@ class RNNModel(nn.Module):
     def forward(self, input):
         # pdb.set_trace()
         seq_len = [len(x) for x in input]
-        if min(seq_len) <= 0:
-            pdb.set_trace()
-        input = pad_sequence(input, batch_first=True)
+        input = pad_sequence(input, batch_first=True).to(self.device)
         emb = self.embedding(input)
         pad_input = pack_padded_sequence(emb, lengths=seq_len, batch_first=True)
-        pad_input = pad_input.to(self.device)
         out, (hidden, cell) = self.rnn1(pad_input)
         out, _ = pad_packed_sequence(out, batch_first=True)
         out_avg = torch.mean(out, dim = 1)

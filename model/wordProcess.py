@@ -4,105 +4,124 @@ import pdb
 import nltk
 import torch
 import numpy as np
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
-def showNLine(file, num = 5):
-    with open(file, 'r') as f:
-        count = 0
-        for line in f:
-            print(line)
-            count += 1
-            if count >= num:
-                break
+class DataProcess(object):
+    def __init__(self, word2Ind, tag2Ind):
+        """
+            Create a dataprocess class to process data
+        :param word2Ind: type: dict, word to index
+        :param tag2Ind: type: dict, tag to index
+        """
+        self.word2Ind = word2Ind
+        self.tag2Ind = tag2Ind
+        # self.train = train
+        # self.valid = valid
+        # self.test = test
 
-def readCorpus(file, w2i, t2i, test = False):
-    assert os.path.exists(file)
+        if len(word2Ind) == 0 and len(tag2Ind) == 0:
+            self.word2Ind['pad'] = 0
+            self.word2Ind['unk'] = 1
 
-    with open(file, 'r') as f:
-        for line in f:
-            if len(line.strip()) > 0:
+        self.dirpath = os.path.join('..', 'topicclass')
+
+    def read_corpus(self, file, testfile=False):
+        """
+            read files and generate token
+        :param file:
+        :param testfile:
+        :return:
+        """
+        filepath = os.path.join(self.dirpath, file)
+        # pdb.set_trace()
+        assert (os.path.exists(filepath)), "file doens't exist"
+        with open(filepath, 'r') as f:
+            for line in f:
+                if len(line.strip()) == 0:
+                    continue
                 tag, sentence = line.lower().strip().split("|||")
-                sentence = preprocess_text(sentence)
+                sentence = self._preprocess_text(sentence)
+                if len(sentence.strip()) == 0:
+                    continue
                 # pdb.set_trace()
-                if test:
-                    yield ([w2i[x] for x in sentence.split(" ") if len(x) > 0])
+                if testfile:
+                    yield ([self.word2Ind[x] for x in sentence.split(" ") if len(x) > 0])
                 else:
-                    yield ([w2i[x] for x in sentence.split(" ") if len(x) > 0], t2i[tag])
+                    yield ([self.word2Ind[x] for x in sentence.split(" ") if len(x) > 0], self.tag2Ind[tag])
 
-def preprocess_text(sentence):
+    def _preprocess_text(self, sentence):
+        # remove punctuation and numbers
+        sentence = re.sub('[^a-zA-Z]', " ", sentence)
+        # remove single character
+        sentence = re.sub(r"\s+[a-zA-Z]\s+", " ", sentence)
+        # remove multiple spaces
+        sentent = re.sub(r"\s+", " ", sentence)
+        return sentence
 
-    # remove punctuation and numbers
-    sentence = re.sub('[^a-zA-Z]', " ", sentence)
-    # remove single character
-    sentence = re.sub(r"\s+[a-zA-Z]\s+", " ", sentence)
-    # remove multiple spaces
-    sentent = re.sub(r"\s+", " ", sentence)
-    return sentence
-
-# def clean_str(string, TREC=False):
-#     """
-#     Tokenization/string cleaning for all datasets except for SST.
-#     Every dataset is lower cased except for TREC
-#     """
-#     string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-#     string = re.sub(r"\'s", " \'s", string)
-#     string = re.sub(r"\'ve", " \'ve", string)
-#     string = re.sub(r"n\'t", " n\'t", string)
-#     string = re.sub(r"\'re", " \'re", string)
-#     string = re.sub(r"\'d", " \'d", string)
-#     string = re.sub(r"\'ll", " \'ll", string)
-#     string = re.sub(r",", " , ", string)
-#     string = re.sub(r"!", " ! ", string)
-#     string = re.sub(r"\(", " \( ", string)
-#     string = re.sub(r"\)", " \) ", string)
-#     string = re.sub(r"\?", " \? ", string)
-#     string = re.sub(r"\s{2,}", " ", string)
-#     return string.strip() if TREC else string.strip().lower()
+    @staticmethod
+    def show_line(file, line_count=5):
+        count = 0
+        with open(file, 'r') as f:
+            for line in f:
+                print(line)
+                count += 1
+                if count >= line_count:
+                    break
 
 
-def padSentence(content):
-    ct = []
-    MAXLEN = max(map(lambda sentence: len(sentence), content))
-    for line in content:
-        if len(line) < MAXLEN:
-            pad = ["<pad>"] * (MAXLEN - len(line))
-            line += pad
-        ct.append(line)
-    return ct
+    # def padSentence(self, content):
+    #     ct = []
+    #     MAXLEN = max(map(lambda sentence: len(sentence), content))
+    #     for line in content:
+    #         if len(line) < MAXLEN:
+    #             pad = ["<pad>"] * (MAXLEN - len(line))
+    #             line += pad
+    #         ct.append(line)
+    #     return ct
+
+
+
 
 class CorpusDataset(Dataset):
-    def __init__(self, dataDict, padding = False, seq_len = None):
-        if padding == True and seq_len is not None:
-            self.data = [torch.tensor(x[0] + [0] * (seq_len - len(x[0]))) for x in dataDict if len(x[0]) > 0]
-            self.target = [torch.tensor(x[1]) for x in dataDict if len(x[0]) > 0]
+    def __init__(self, dataDict, padding = False, seq_len = None, test_flag = False):
+        self.test_flag = test_flag
+
+        if self.test_flag:
+            self.data = dataDict
         else:
-            self.data = [torch.tensor(x[0]) for x in dataDict if len(x[0]) > 0]
-            self.target = [torch.tensor(x[1]) for x in dataDict if len(x[0]) > 0]
+            self.data, self.target = zip(*dataDict)
+
+        if padding == True and seq_len is not None:
+            self.data = [data + [0] * (seq_len - len(data)) for data in self.data]
+
+    def _convert_to_tensor(self, data):
+        return torch.tensor(data, dtype=torch.long)
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        data = self.data[idx]
-        target = self.target[idx]
-
-        return data, target
+        data = self._convert_to_tensor(self.data[idx])
+        if self.test_flag:
+            return data
+        else:
+            target = self._convert_to_tensor(self.target[idx])
+            return data, target
 
 # #
-class TestDataset(Dataset):
-    def __init__(self, data, padding = False, seq_len = None):
-        if padding == True and seq_len is not None:
-            self.data = [torch.tensor(x + [0] * (seq_len - len(x))) for x in data]
-        else:
-            self.data = [torch.tensor(x) for x in data]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        data = self.data[idx]
-        return data
+# class TestDataset(Dataset):
+#     def __init__(self, data, padding = False, seq_len = None):
+#         if padding == True and seq_len is not None:
+#             self.data = [torch.tensor(x + [0] * (seq_len - len(x))) for x in data]
+#         else:
+#             self.data = [torch.tensor(x) for x in data]
+#
+#     def __len__(self):
+#         return len(self.data)
+#
+#     def __getitem__(self, idx):
+#         data = self.data[idx]
+#         return data
 
 
 def collate_line(seqline):

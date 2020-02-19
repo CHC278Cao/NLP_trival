@@ -51,10 +51,9 @@ class AttentionNet(nn.Module):
     def forward(self, input):
         # pdb.set_trace()
         seq_len = [len(x) for x in input]
-        input = pad_sequence(input, batch_first=True)
+        input = pad_sequence(input, batch_first=True).to(self.device)
         emb = self.embedding(input)
         pad_input = pack_padded_sequence(emb, lengths=seq_len, batch_first=True)
-        pad_input = pad_input.to(self.device)
         enc_out, (enc_hidden, enc_cell) = self.lstm1(pad_input)
         enc_out, _ = pad_packed_sequence(enc_out, batch_first=True)
         mask = self.generate_mask(enc_out, seq_len)

@@ -31,15 +31,15 @@ class CNNModel(nn.Module):
         return logit
 
 
-def train_epoch(model, dataloader, device, optimizer, criterion):
+def train_epoch(model, dataloader, optimizer, criterion, device):
     model.train()
     model.to(device)
     running_loss = 0.0
 
     for batch_idx, (data, target) in enumerate(dataloader):
         # pdb.set_trace()
-        data = torch.stack(data).to(device)
-        target = torch.stack(target).view(-1).to(device)
+        data = data.to(device)
+        target = target.view(-1).to(device)
         optimizer.zero_grad()
         out = model(data)
         loss = criterion(out, target)
@@ -52,16 +52,16 @@ def train_epoch(model, dataloader, device, optimizer, criterion):
 
     return running_loss / len(dataloader)
 
-def valid_epoch(model, validloader, device, criterion):
+def valid_epoch(model, validloader, criterion, device):
     model.eval()
     model.to(device)
     running_loss = 0.0
     correct = 0
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(validloader):
-            # pdb.set_trace()
-            data = torch.stack(data).to(device)
-            target = torch.stack(target).view(-1).to(device)
+            pdb.set_trace()
+            data = data.to(device)
+            target = target.view(-1).to(device)
             out = model(data)
             loss = criterion(out, target)
             pred = torch.argmax(out, dim = 1)
