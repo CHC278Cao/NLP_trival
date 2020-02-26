@@ -14,6 +14,7 @@ from RNNClassify import *
 # from LSTMAtten import *
 
 
+
 def train_CNN(train, valid, test, device):
 
     model = CNNModel(nwords, 100, 0.1, ntags)
@@ -130,8 +131,6 @@ def train_LSTMAttn(train, valid, test, device):
     validDataset = CorpusDataset(valid, padding = False)
     testDataset = CorpusDataset(test, padding = False, test_flag = True)
 
-    # target = [x[1] for x in train if len(x[0]) > 0]
-
     traindataset_args = dict(shuffle=True, batch_size=64, collate_fn=collate_line)
     validdataset_args = dict(shuffle=True, batch_size=64, collate_fn=collate_line)
     testdataset_args = dict(shuffle=False, batch_size=64)
@@ -169,8 +168,6 @@ def train_LSTMAttn(train, valid, test, device):
                 break
 
 
-
-
 if __name__ == '__main__':
     w2i = defaultdict(lambda: len(w2i))
     t2i = defaultdict(lambda: len(t2i))
@@ -182,7 +179,6 @@ if __name__ == '__main__':
     train = list(data.read_corpus(trainfile))
     valid = list(data.read_corpus(validfile))
     test = list(data.read_corpus(testfile, testfile=True))
-    # pdb.set_trace()
 
     nwords = len(w2i)
     ntags = len(t2i)

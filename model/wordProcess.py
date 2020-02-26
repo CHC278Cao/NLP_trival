@@ -15,9 +15,6 @@ class DataProcess(object):
         """
         self.word2Ind = word2Ind
         self.tag2Ind = tag2Ind
-        # self.train = train
-        # self.valid = valid
-        # self.test = test
 
         if len(word2Ind) == 0 and len(tag2Ind) == 0:
             self.word2Ind['pad'] = 0
@@ -69,19 +66,6 @@ class DataProcess(object):
                     break
 
 
-    # def padSentence(self, content):
-    #     ct = []
-    #     MAXLEN = max(map(lambda sentence: len(sentence), content))
-    #     for line in content:
-    #         if len(line) < MAXLEN:
-    #             pad = ["<pad>"] * (MAXLEN - len(line))
-    #             line += pad
-    #         ct.append(line)
-    #     return ct
-
-
-
-
 class CorpusDataset(Dataset):
     def __init__(self, dataDict, padding = False, seq_len = None, test_flag = False):
         self.test_flag = test_flag
@@ -107,21 +91,6 @@ class CorpusDataset(Dataset):
         else:
             target = self._convert_to_tensor(self.target[idx])
             return data, target
-
-# #
-# class TestDataset(Dataset):
-#     def __init__(self, data, padding = False, seq_len = None):
-#         if padding == True and seq_len is not None:
-#             self.data = [torch.tensor(x + [0] * (seq_len - len(x))) for x in data]
-#         else:
-#             self.data = [torch.tensor(x) for x in data]
-#
-#     def __len__(self):
-#         return len(self.data)
-#
-#     def __getitem__(self, idx):
-#         data = self.data[idx]
-#         return data
 
 
 def collate_line(seqline):
