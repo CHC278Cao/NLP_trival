@@ -12,7 +12,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from sklearn import model_selection
 
 if __name__ == "__main__":
-    model_path = '/Users/caochangjian/Downloads/virtualEnv/Bert/bert_base_uncased'
+    model_path = '../virtualEnv/Bert/bert_base_uncased'
     vocab_path = os.path.join(model_path, 'vocab.txt')
 
     tokenizer = BertTokenizer.from_pretrained(vocab_path)
